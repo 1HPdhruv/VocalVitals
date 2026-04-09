@@ -1,0 +1,169 @@
+version: '3.8'
+
+services:
+  # FastAPI application server
+  fastapi:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: vocalvitals-api
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://vocalvitals:vocalvitals@postgres:5432/vocalvitals
+      - REDIS_URL=redis://redis:6379/0
+      - TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID}
+      - TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN}
+      - TWILIO_PHONE_NUMBER=${TWILIO_PHONE_NUMBER}
+      - S3_BUCKET_NAME=${S3_BUCKET_NAME}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_REGION=${AWS_REGION:-us-east-1}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - HF_TOKEN=${HF_TOKEN}
+      - SENDGRID_API_KEY=${SENDGRID_API_KEY}
+      - STREAM_WEBSOCKET_URL=${STREAM_WEBSOCKET_URL}
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ./backend/data:/app/data
+      - ./backend/models:/app/models
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Celery worker for audio processing (high concurrency)
+  celery_worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: vocalvitals-celery-audio
+    command: celery -A services.celery_app worker -Q audio_processing --concurrency=4 --loglevel=info
+    environment:
+      - DATABASE_URL=postgresql://vocalvitals:vocalvitals@postgres:5432/vocalvitals
+      - REDIS_URL=redis://redis:6379/0
+      - S3_BUCKET_NAME=${S3_BUCKET_NAME}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_REGION=${AWS_REGION:-us-east-1}
+      - HF_TOKEN=${HF_TOKEN}
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ./backend/data:/app/data
+      - ./backend/models:/app/models
+    restart: unless-stopped
+
+  # Celery worker for notifications (lower concurrency)
+  celery_worker_notify:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: vocalvitals-celery-notify
+    command: celery -A services.celery_app worker -Q notifications --concurrency=2 --loglevel=info
+    environment:
+      - DATABASE_URL=postgresql://vocalvitals:vocalvitals@postgres:5432/vocalvitals
+      - REDIS_URL=redis://redis:6379/0
+      - TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID}
+      - TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN}
+      - TWILIO_PHONE_NUMBER=${TWILIO_PHONE_NUMBER}
+      - SENDGRID_API_KEY=${SENDGRID_API_KEY}
+      - SENDGRID_FROM_EMAIL=${SENDGRID_FROM_EMAIL:-alerts@vocalvitals.ai}
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+
+  # Celery beat for scheduled tasks
+  celery_beat:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: vocalvitals-celery-beat
+    command: celery -A services.celery_app beat --loglevel=info
+    environment:
+      - DATABASE_URL=postgresql://vocalvitals:vocalvitals@postgres:5432/vocalvitals
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+
+  # Redis for Celery broker and result backend
+  redis:
+    image: redis:7-alpine
+    container_name: vocalvitals-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # PostgreSQL database
+  postgres:
+    image: postgres:15-alpine
+    container_name: vocalvitals-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=vocalvitals
+      - POSTGRES_PASSWORD=vocalvitals
+      - POSTGRES_DB=vocalvitals
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vocalvitals"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Flower - Celery monitoring UI
+  flower:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: vocalvitals-flower
+    command: celery -A services.celery_app flower --port=5555
+    ports:
+      - "5555:5555"
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - FLOWER_BASIC_AUTH=${FLOWER_USER:-admin}:${FLOWER_PASSWORD:-admin}
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+  # Frontend (optional - for production deployment)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: vocalvitals-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - VITE_API_URL=http://fastapi:8000
+    depends_on:
+      - fastapi
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  default:
+    name: vocalvitals-network

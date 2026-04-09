@@ -1,0 +1,53 @@
+# Environment files
+.env
+.env.local
+.env.*.local
+frontend/.env
+backend/.env
+
+# Node
+frontend/node_modules/
+frontend/dist/
+
+# Python
+backend/venv/
+backend/__pycache__/
+backend/.pytest_cache/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+node_modules/  
+venv/  
+__pycache__/  
+.env  
+.vite-temp-cache/  
+backend/models/*.pkl  
+node_modules/ 
+venv/ 
+.env 
+__pycache__/ 
+*.pkl 
+.vite-temp-cache/ 
+  
+# Ignore large folders  
+data/  
+models/  
+datasets/  
+  
+# Ignore files  
+*.pkl  
+*.wav  
+*.mp3  
+*.zip  
+*.tar  
+*.h5  
+*.pt  
+  
+# Python cache  
+__pycache__/  
+*.pyc  
+  
+# Virtual environment  
+.venv/ 
