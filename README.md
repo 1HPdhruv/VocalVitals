@@ -1,7 +1,7 @@
 # VocalVitals — AI Voice Health Screening for Parkinson's & Diabetes
 
 <div align="center">
-  <h3>🎙️ Clinical-grade voice biomarker analysis powered by Claude AI</h3>
+  <h3>🎙️ Clinical-grade voice biomarker analysis</h3>
   <p>React + FastAPI · Whisper · librosa · parselmouth · Firebase · Twilio</p>
 </div>
 
