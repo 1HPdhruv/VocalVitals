@@ -1,0 +1,13 @@
+# Data
+data/
+*.wav
+
+# Models (optional to ignore, but ignoring the heavy keras model)
+model/*.h5
+
+# Python
+__pycache__/
+*.pyc
+
+# Mac
+.DS_Store

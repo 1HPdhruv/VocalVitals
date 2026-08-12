@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VocalVitals V4 - Real Data Prototype</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- Load TensorFlow.js -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0/dist/tf.min.js"></script>
+    <!-- Load Meyda for Audio Feature Extraction -->
+    <script src="https://unpkg.com/meyda/dist/web/meyda.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>VocalVitals Prototype</h1>
+            <p>V4 - Real Data Model Integration with Personal Baseline Tracking</p>
+        </header>
+
+        <section class="controls">
+            <button id="record-btn" class="btn primary">Start Recording</button>
+            <button id="stop-btn" class="btn danger" disabled>Stop</button>
+        </section>
+
+        <section class="status-panel">
+            <h2>Status</h2>
+            <div id="status-text">Ready. Please allow microphone access.</div>
+        </section>
+
+        <section class="results-panel">
+            <h2>Analysis Results</h2>
+            <div id="prediction-result">Waiting for audio...</div>
+            <div class="baseline-info" id="baseline-info">
+                Baseline status: <span id="baseline-status">Not established</span>
+            </div>
+        </section>
+    </div>
+    
+    <script src="model.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
