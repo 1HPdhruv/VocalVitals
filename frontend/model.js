@@ -9,7 +9,9 @@ class VocalVitalsModel {
         try {
             // In a real deployed app, this points to the hosted tfjs model.json
             // Here we assume it's served statically from the model/tfjs dir
-            this.model = await tf.loadLayersModel('/model/tfjs/model.json');
+            // After training, copy model/tfjs/ into frontend/model/
+            // e.g. cp -r model/tfjs/* frontend/model/
+            this.model = await tf.loadLayersModel('/model/model.json');
             this.isLoaded = true;
             console.log("Model loaded successfully.");
         } catch (error) {
