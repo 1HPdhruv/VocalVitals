@@ -11,3 +11,9 @@ __pycache__/
 
 # Mac
 .DS_Store
+
+# Backend
+backend/.env
+backend/*.db
+backend/vocalvitals.db
+

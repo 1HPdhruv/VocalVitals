@@ -1,0 +1,25 @@
+services:
+  # FastAPI backend
+  - type: web
+    name: vocalvitals-api
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: vocalvitals-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ALLOWED_ORIGINS
+        value: '["https://your-app.vercel.app"]'
+      - key: ADMIN_EMAIL
+        value: admin@vocalvitals.dev
+    healthCheckPath: /health
+    autoDeploy: true
+
+databases:
+  - name: vocalvitals-db
+    databaseName: vocalvitals
+    plan: free
